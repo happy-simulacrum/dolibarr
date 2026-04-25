@@ -290,6 +290,47 @@ class FactureStats extends Stats
 
 		return $this->_getAllByProduct($sql, $limit);
 	}
+
+	/**
+	 *	Return nb, total and average for a given period
+	 *
+	 *	@param	int		$date_start		Start date timestamp
+	 *	@param	int		$date_end		End date timestamp
+	 *	@return	array{nb:int,total:float,average:float}|array{}	Array with nb, total, average or empty array if error
+	 */
+	public function getAverageByPeriod($date_start, $date_end)
+	{
+		global $user;
+
+		if (empty($date_start) || empty($date_end)) {
+			return array();
+		}
+
+		$sql = "SELECT COUNT(*) as nb, SUM(f.".$this->db->sanitize($this->field).") as total, AVG(f.".$this->db->sanitize($this->field).") as average";
+		$sql .= " FROM ".$this->db->sanitize($this->from, 0, 1, 1);
+		if (empty($user->socid) && !$user->hasRight('societe', 'client', 'voir')) {
+			$sql .= " INNER JOIN ".MAIN_DB_PREFIX."societe_commerciaux as sc ON f.fk_soc = sc.fk_soc AND sc.fk_user = ".((int) $user->id);
+		}
+		$sql .= $this->join;
+		$sql .= " WHERE f.datef BETWEEN '".$this->db->idate($date_start)."' AND '".$this->db->idate($date_end)."'";
+		$sql .= " AND ".$this->where;
+
+		dol_syslog(__METHOD__, LOG_DEBUG);
+		$resql = $this->db->query($sql);
+		if ($resql) {
+			$obj = $this->db->fetch_object($resql);
+			$this->db->free($resql);
+			return array(
+				'nb' => (int) $obj->nb,
+				'total' => (float) $obj->total,
+				'average' => (float) $obj->average,
+			);
+		} else {
+			dol_print_error($this->db);
+			return array();
+		}
+	}
+
 	/**
 	 *      Return the invoices amount by year for a number of past years
 	 *

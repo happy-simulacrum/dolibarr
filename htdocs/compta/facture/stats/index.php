@@ -72,6 +72,17 @@ $userid = GETPOSTINT('userid');
 $socid = GETPOSTINT('socid');
 $select_categ_categ_id = GETPOST('select_categ_categ_id', 'array:int');
 $select_categ_invoice_id=GETPOST('select_categ_invoice_id', 'array:int');
+
+// Date range for average check calculation
+$date_startday = GETPOSTINT('date_startday');
+$date_startmonth = GETPOSTINT('date_startmonth');
+$date_startyear = GETPOSTINT('date_startyear');
+$date_endday = GETPOSTINT('date_endday');
+$date_endmonth = GETPOSTINT('date_endmonth');
+$date_endyear = GETPOSTINT('date_endyear');
+$date_start = dol_mktime(0, 0, 0, $date_startmonth, $date_startday, $date_startyear, 'tzserver');
+$date_end = dol_mktime(23, 59, 59, $date_endmonth, $date_endday, $date_endyear, 'tzserver');
+
 // Security check
 if ($user->socid > 0) {
 	$action = '';
@@ -143,6 +154,12 @@ if ($mode == 'supplier') {
 		$stats->from .= ' LEFT JOIN '.MAIN_DB_PREFIX.'categorie_supplier_invoice as cat ON (f.rowid = cat.fk_supplier_invoice)';
 		$stats->where .= ' AND cat.fk_categorie IN ('.$db->sanitize(implode(',', $select_categ_invoice_id)).')';
 	}
+}
+
+// Calculate average check for selected period
+$averagecheck = array();
+if (!empty($date_start) && !empty($date_end)) {
+	$averagecheck = $stats->getAverageByPeriod($date_start, $date_end);
 }
 
 // Build graphic number of object
@@ -396,9 +413,39 @@ arsort($arrayyears);
 print img_picto('', 'calendar', 'class="pictofixedwidth"');
 print $form->selectarray('year', $arrayyears, $year, 0, 0, 0, '', 0, 0, 0, '', 'width75');
 print '</td></tr>';
+// Date range for average check
+print '<tr><td>'.$langs->trans("DateRange").'</td><td>';
+print $form->selectDate($date_start, 'date_start', 0, 0, 0, '', 1, 0, 0, '', '', '', '', 1, '', '', 'tzserver');
+print ' &mdash; ';
+print $form->selectDate($date_end, 'date_end', 0, 0, 0, '', 1, 0, 0, '', '', '', '', 1, '', '', 'tzserver');
+print '</td></tr>';
 print '<tr><td class="center" colspan="2"><input type="submit" name="submit" class="button small" value="'.$langs->trans("Refresh").'"></td></tr>';
 print '</table>';
 print '</form>';
+
+// Show average check for period if dates are selected
+if (!empty($date_start) && !empty($date_end) && !empty($averagecheck)) {
+	print '<br>';
+	print '<div class="div-table-responsive-no-min">';
+	print '<table class="noborder centpercent">';
+	print '<tr class="liste_titre">';
+	print '<td>'.$langs->trans("AverageCheck").'</td>';
+	print '<td>'.$langs->trans("DateRange").'</td>';
+	print '<td class="right">'.$langs->trans("NumberOfBills").'</td>';
+	print '<td class="right">'.$langs->trans("AmountTotal").'</td>';
+	print '<td class="right">'.$langs->trans("AmountAverage").'</td>';
+	print '</tr>';
+	print '<tr class="oddeven">';
+	print '<td>'.$langs->trans("AverageCheck").'</td>';
+	print '<td>'.dol_print_date($date_start, 'day').' &mdash; '.dol_print_date($date_end, 'day').'</td>';
+	print '<td class="right">'.$averagecheck['nb'].'</td>';
+	print '<td class="right amount">'.price(price2num($averagecheck['total'], 'MT'), 1).'</td>';
+	print '<td class="right amount">'.price(price2num($averagecheck['average'], 'MT'), 1).'</td>';
+	print '</tr>';
+	print '</table>';
+	print '</div>';
+}
+
 print '<br><br>';
 
 print '<div class="div-table-responsive-no-min">';
