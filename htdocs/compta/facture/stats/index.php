@@ -51,7 +51,7 @@ $WIDTH = DolGraph::getDefaultGraphSizeForStats('width');
 $HEIGHT = DolGraph::getDefaultGraphSizeForStats('height');
 
 // Load translation files required by the page
-$langs->loadLangs(array('bills', 'companies', 'other'));
+$langs->loadLangs(array('bills', 'companies', 'products', 'other'));
 
 $mode = GETPOST("mode") ? GETPOST("mode") : 'customer';
 
@@ -158,8 +158,10 @@ if ($mode == 'supplier') {
 
 // Calculate average check for selected period
 $averagecheck = array();
+$topproducts = array();
 if (!empty($date_start) && !empty($date_end)) {
 	$averagecheck = $stats->getAverageByPeriod($date_start, $date_end);
+	$topproducts = $stats->getTopProductsByPeriod($date_start, $date_end, 5);
 }
 
 // Build graphic number of object
@@ -444,6 +446,31 @@ if (!empty($date_start) && !empty($date_end) && !empty($averagecheck)) {
 	print '</tr>';
 	print '</table>';
 	print '</div>';
+
+	// Show top products for period
+	if (!empty($topproducts)) {
+		print '<br>';
+		print '<div class="div-table-responsive-no-min">';
+		print '<table class="noborder centpercent">';
+		print '<tr class="liste_titre">';
+		print '<td class="right">'.$langs->trans("Rank").'</td>';
+		print '<td>'.$langs->trans("Product").'</td>';
+		print '<td class="right">'.$langs->trans("Quantity").'</td>';
+		print '<td class="right">'.$langs->trans("AmountTotal").'</td>';
+		print '</tr>';
+		$rank = 1;
+		foreach ($topproducts as $prod) {
+			print '<tr class="oddeven">';
+			print '<td class="right">'.$rank.'</td>';
+			print '<td>'.dol_escape_htmltag($prod['ref']).($prod['label'] ? ' - '.dol_escape_htmltag($prod['label']) : '').'</td>';
+			print '<td class="right">'.$prod['nb'].'</td>';
+			print '<td class="right amount">'.price(price2num($prod['total'], 'MT'), 1).'</td>';
+			print '</tr>';
+			$rank++;
+		}
+		print '</table>';
+		print '</div>';
+	}
 }
 
 print '<br><br>';

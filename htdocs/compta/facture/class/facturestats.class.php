@@ -332,6 +332,61 @@ class FactureStats extends Stats
 	}
 
 	/**
+	 *	Return top products by quantity sold for a given period
+	 *
+	 *	@param	int		$date_start		Start date timestamp
+	 *	@param	int		$date_end		End date timestamp
+	 *	@param	int		$limit			Max number of products to return
+	 *	@return	array<int,array{ref:string,label:string,nb:int,total:float}>	Array of top products or empty array if error
+	 */
+	public function getTopProductsByPeriod($date_start, $date_end, $limit = 5)
+	{
+		global $user;
+
+		if (empty($date_start) || empty($date_end)) {
+			return array();
+		}
+
+		$sql = "SELECT product.ref, product.label, COUNT(product.ref) as nb, SUM(tl.".$this->db->sanitize($this->field_line).") as total";
+		$sql .= " FROM ".$this->db->sanitize($this->from, 0, 1, 1);
+		$sql .= " INNER JOIN ".$this->db->sanitize($this->from_line, 0, 1, 1)." ON f.rowid = tl.fk_facture";
+		$sql .= " INNER JOIN ".MAIN_DB_PREFIX."product as product ON tl.fk_product = product.rowid";
+		if (empty($user->socid) && !$user->hasRight('societe', 'client', 'voir')) {
+			$sql .= " INNER JOIN ".MAIN_DB_PREFIX."societe_commerciaux as sc ON f.fk_soc = sc.fk_soc AND sc.fk_user = ".((int) $user->id);
+		}
+		$sql .= $this->join;
+		$sql .= " WHERE f.datef BETWEEN '".$this->db->idate($date_start)."' AND '".$this->db->idate($date_end)."'";
+		$sql .= " AND ".$this->where;
+		$sql .= " AND tl.fk_product IS NOT NULL AND tl.fk_product > 0";
+		$sql .= " GROUP BY product.ref, product.label";
+		$sql .= $this->db->order('nb', 'DESC');
+		$sql .= $this->db->plimit($limit);
+
+		dol_syslog(__METHOD__, LOG_DEBUG);
+		$result = array();
+		$resql = $this->db->query($sql);
+		if ($resql) {
+			$num = $this->db->num_rows($resql);
+			$i = 0;
+			while ($i < $num) {
+				$row = $this->db->fetch_object($resql);
+				$result[$i] = array(
+					'ref' => $row->ref,
+					'label' => $row->label,
+					'nb' => (int) $row->nb,
+					'total' => (float) $row->total,
+				);
+				$i++;
+			}
+			$this->db->free($resql);
+		} else {
+			dol_print_error($this->db);
+		}
+
+		return $result;
+	}
+
+	/**
 	 *      Return the invoices amount by year for a number of past years
 	 *
 	 *      @param  int<0,max>		$numberYears    Years to scan

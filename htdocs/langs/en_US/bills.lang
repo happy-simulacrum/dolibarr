@@ -239,6 +239,7 @@ AmountOfBills=Amount of invoices
 AmountOfBillsHT=Amount of invoices (net of tax)
 AmountOfBillsByMonthHT=Amount of invoices by month (net of tax)
 AverageCheck=Average check
+TopProducts=Top products
 UseSituationInvoices=Allow situation invoice
 UseSituationInvoicesCreditNote=Allow situation invoice credit note
 RetainedWarranty=Retained warranty
