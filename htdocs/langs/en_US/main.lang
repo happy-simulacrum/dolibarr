@@ -429,6 +429,7 @@ AmountLT1ES=Amount RE
 AmountLT2ES=Amount IRPF
 AmountTotal=Total amount
 AmountAverage=Average amount
+AmountMedian=Median amount
 PriceQtyMinHT=Price quantity min. (excl. tax)
 PriceQtyMinHTCurrency=Price quantity min. (excl. tax) (currency)
 PercentOfOriginalObject=Percent of original object

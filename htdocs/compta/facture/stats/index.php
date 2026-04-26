@@ -156,7 +156,7 @@ if ($mode == 'supplier') {
 	}
 }
 
-// Calculate average check for selected period
+// Calculate median check for selected period
 $averagecheck = array();
 $topproducts = array();
 if (!empty($date_start) && !empty($date_end)) {
@@ -431,18 +431,18 @@ if (!empty($date_start) && !empty($date_end) && !empty($averagecheck)) {
 	print '<div class="div-table-responsive-no-min">';
 	print '<table class="noborder centpercent">';
 	print '<tr class="liste_titre">';
-	print '<td>'.$langs->trans("AverageCheck").'</td>';
+	print '<td>'.$langs->trans("MedianCheck").'</td>';
 	print '<td>'.$langs->trans("DateRange").'</td>';
 	print '<td class="right">'.$langs->trans("NumberOfBills").'</td>';
 	print '<td class="right">'.$langs->trans("AmountTotal").'</td>';
-	print '<td class="right">'.$langs->trans("AmountAverage").'</td>';
+	print '<td class="right">'.$langs->trans("AmountMedian").'</td>';
 	print '</tr>';
 	print '<tr class="oddeven">';
-	print '<td>'.$langs->trans("AverageCheck").'</td>';
+	print '<td>'.$langs->trans("MedianCheck").'</td>';
 	print '<td>'.dol_print_date($date_start, 'day').' &mdash; '.dol_print_date($date_end, 'day').'</td>';
 	print '<td class="right">'.$averagecheck['nb'].'</td>';
 	print '<td class="right amount">'.price(price2num($averagecheck['total'], 'MT'), 1).'</td>';
-	print '<td class="right amount">'.price(price2num($averagecheck['average'], 'MT'), 1).'</td>';
+	print '<td class="right amount">'.price(price2num($averagecheck['median'], 'MT'), 1).'</td>';
 	print '</tr>';
 	print '</table>';
 	print '</div>';

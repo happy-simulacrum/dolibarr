@@ -292,11 +292,11 @@ class FactureStats extends Stats
 	}
 
 	/**
-	 *	Return nb, total and average for a given period
+	 *	Return nb, total and median for a given period
 	 *
 	 *	@param	int		$date_start		Start date timestamp
 	 *	@param	int		$date_end		End date timestamp
-	 *	@return	array{nb:int,total:float,average:float}|array{}	Array with nb, total, average or empty array if error
+	 *	@return	array{nb:int,total:float,median:float}|array{}	Array with nb, total, median or empty array if error
 	 */
 	public function getAverageByPeriod($date_start, $date_end)
 	{
@@ -306,7 +306,7 @@ class FactureStats extends Stats
 			return array();
 		}
 
-		$sql = "SELECT COUNT(*) as nb, SUM(f.".$this->db->sanitize($this->field).") as total, AVG(f.".$this->db->sanitize($this->field).") as average";
+		$sql = "SELECT f.".$this->db->sanitize($this->field)." as amount";
 		$sql .= " FROM ".$this->db->sanitize($this->from, 0, 1, 1);
 		if (empty($user->socid) && !$user->hasRight('societe', 'client', 'voir')) {
 			$sql .= " INNER JOIN ".MAIN_DB_PREFIX."societe_commerciaux as sc ON f.fk_soc = sc.fk_soc AND sc.fk_user = ".((int) $user->id);
@@ -314,21 +314,53 @@ class FactureStats extends Stats
 		$sql .= $this->join;
 		$sql .= " WHERE f.datef BETWEEN '".$this->db->idate($date_start)."' AND '".$this->db->idate($date_end)."'";
 		$sql .= " AND ".$this->where;
+		$sql .= " ORDER BY amount ASC";
 
 		dol_syslog(__METHOD__, LOG_DEBUG);
 		$resql = $this->db->query($sql);
 		if ($resql) {
-			$obj = $this->db->fetch_object($resql);
+			$amounts = array();
+			$total = 0;
+			$num = $this->db->num_rows($resql);
+			$i = 0;
+			while ($i < $num) {
+				$obj = $this->db->fetch_object($resql);
+				$amounts[] = (float) $obj->amount;
+				$total += (float) $obj->amount;
+				$i++;
+			}
 			$this->db->free($resql);
+
+			$median = $this->calculateMedian($amounts);
+
 			return array(
-				'nb' => (int) $obj->nb,
-				'total' => (float) $obj->total,
-				'average' => (float) $obj->average,
+				'nb' => $num,
+				'total' => $total,
+				'median' => $median,
 			);
 		} else {
 			dol_print_error($this->db);
 			return array();
 		}
+	}
+
+	/**
+	 *	Calculate median value from a sorted array of numbers
+	 *
+	 *	@param	float[]	$values	Sorted array of numeric values
+	 *	@return	float	Median value, 0 if array is empty
+	 */
+	private function calculateMedian($values)
+	{
+		$count = count($values);
+		if ($count === 0) {
+			return 0.0;
+		}
+		if ($count % 2 === 1) {
+			return $values[(int) floor($count / 2)];
+		}
+		$mid = $count / 2;
+		return ($values[$mid - 1] + $values[$mid]) / 2.0;
 	}
 
 	/**
