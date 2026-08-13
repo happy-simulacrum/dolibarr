@@ -369,7 +369,7 @@ class FactureStats extends Stats
 	 *	@param	int		$date_start		Start date timestamp
 	 *	@param	int		$date_end		End date timestamp
 	 *	@param	int		$limit			Max number of products to return
-	 *	@return	array<int,array{ref:string,label:string,nb:int,total:float}>	Array of top products or empty array if error
+	 *	@return	array<int,array{ref:string,label:string,nb:float,total:float}>	Array of top products or empty array if error
 	 */
 	public function getTopProductsByPeriod($date_start, $date_end, $limit = 5)
 	{
@@ -379,7 +379,7 @@ class FactureStats extends Stats
 			return array();
 		}
 
-		$sql = "SELECT product.ref, product.label, COUNT(product.ref) as nb, SUM(tl.".$this->db->sanitize($this->field_line).") as total";
+		$sql = "SELECT product.ref, product.label, SUM(tl.qty) as nb, SUM(tl.".$this->db->sanitize($this->field_line).") as total";
 		$sql .= " FROM ".$this->db->sanitize($this->from, 0, 1, 1);
 		$sql .= " INNER JOIN ".$this->db->sanitize($this->from_line, 0, 1, 1)." ON f.rowid = tl.fk_facture";
 		$sql .= " INNER JOIN ".MAIN_DB_PREFIX."product as product ON tl.fk_product = product.rowid";
@@ -405,7 +405,7 @@ class FactureStats extends Stats
 				$result[$i] = array(
 					'ref' => $row->ref,
 					'label' => $row->label,
-					'nb' => (int) $row->nb,
+					'nb' => (float) $row->nb,
 					'total' => (float) $row->total,
 				);
 				$i++;
